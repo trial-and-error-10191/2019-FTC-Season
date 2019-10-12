@@ -54,8 +54,37 @@ public class vuforiaTeleOp extends LinearOpMode {
             for (VuforiaTrackable trackable : allTrackables) {
                 if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
                     telemetry.addData("Visible Target", trackable.getName());
-                    telemetry.addData("What Side",trackable.getLocation());
 
+                if(((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
+                    if(trackable.getName().equals("Front Perimeter 1")){
+                        telemetry.addData("depot side / red depot",trackable.getName());
+                    }
+                    else if(trackable.getName().equals("Front Perimeter 2")){
+                        telemetry.addData("depot side / blue depot",trackable.getName());
+                    }
+                    else if(trackable.getName().equals("Red Perimeter 2")){
+                        telemetry.addData("depot side / red alliance wall",trackable.getName());
+                    }
+                    else if(trackable.getName().equals("Blue Perimeter 1")){
+                        telemetry.addData("depot side / blue alliance wall",trackable.getName());
+                    }
+                    else if(trackable.getName().equals("Red Perimeter 1")){
+                        telemetry.addData("build side / red alliance wall",trackable.getName());
+                    }
+                    else if(trackable.getName().equals("Blue Perimeter 2")){
+                        telemetry.addData("build side / blue alliance wall ",trackable.getName());
+                    }
+                    else if(trackable.getName().equals("Rear Perimeter 2")){
+                        telemetry.addData("build side/ red side",trackable.getName());
+                    }
+                    else if(trackable.getName().equals("Rear Perimeter 1")){
+                        telemetry.addData("build side / blue side",trackable.getName());
+                    }
+                    else {
+                        telemetry.addLine("dead");
+                    }
+
+                }
 
                     robot.targetVisible = true;
 
