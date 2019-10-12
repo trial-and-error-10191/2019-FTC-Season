@@ -52,9 +52,7 @@ public class vuforiaTeleOp extends LinearOpMode {
             // check all the trackable targets to see which one (if any) is visible.
             robot.targetVisible = false;
             for (VuforiaTrackable trackable : allTrackables) {
-                if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
-                    telemetry.addData("Visible Target", trackable.getName());
-
+                
                 if(((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
                     if(trackable.getName().equals("Front Perimeter 1")){
                         telemetry.addData("depot side / red depot",trackable.getName());
@@ -84,7 +82,7 @@ public class vuforiaTeleOp extends LinearOpMode {
                         telemetry.addLine("dead");
                     }
 
-                }
+
 
                     robot.targetVisible = true;
 
