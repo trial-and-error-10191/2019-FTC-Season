@@ -51,8 +51,8 @@ public class vuforiaHardware {
     //math
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
-    public static final float mmPerInch        = 25.4f;
-    public static final float mmTargetHeight   = (6) * mmPerInch;          // the height of the center of the target image above the floor
+    public static final float mmPerInch = 25.4f;
+    public static final float mmTargetHeight = (6) * mmPerInch;          // the height of the center of the target image above the floor
 
     // Constant for Stone Target
     public static final float stoneZ = 2.00f * mmPerInch;
@@ -66,23 +66,33 @@ public class vuforiaHardware {
 
     // Constants for perimeter targets
     public static final float halfField = 72 * mmPerInch;
-    public static final float quadField  = 36 * mmPerInch;
+    public static final float quadField = 36 * mmPerInch;
 
     // Class Members
     public OpenGLMatrix lastLocation = null;
     public VuforiaLocalizer vuforia = null;
     public boolean targetVisible = false;
-    public float phoneXRotate    = 0;
-    public float phoneYRotate    = 0;
-    public float phoneZRotate    = 0;
+    public float phoneXRotate = 0;
+    public float phoneYRotate = 0;
+    public float phoneZRotate = 0;
 
-
+    // Flag for if we have found where we are
+    public boolean locationFlag = false;
+    //looking for the the side that we are on
+    public boolean depot;
+    // sets the team
+    public boolean blueTeam;
+    // is the skystone visable
+    boolean skyStoneVis;
+    // which camra phone? or webcam?
+    boolean webCam;
+    boolean phoneCam;
 
 
     // Load from assets
     VuforiaTrackables targetsSkyStone = null;
-
-    //WebcamName webcamName = null;
+    // webcam
+    WebcamName webcamName = null;
 
 
     // Split up the above object into separate objects
@@ -99,6 +109,7 @@ public class vuforiaHardware {
     VuforiaTrackable blue2 = null;
     VuforiaTrackable rear1 = null;
     VuforiaTrackable rear2 = null;
+    phoneServoHardware robot = new phoneServoHardware();
 
     // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
@@ -123,20 +134,19 @@ public class vuforiaHardware {
         // For convenience, gather together all the trackable objects in one easily-iterable collection */
 
 
-
         int cameraMonitorViewId = ahwMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", ahwMap.appContext.getPackageName());
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection   = CAMERA_CHOICE;
-        //parameters.cameraName = webcamName;
+        parameters.cameraDirection = CAMERA_CHOICE;
+        parameters.cameraName = webcamName;
 
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
         targetsSkyStone = this.vuforia.loadTrackablesFromAsset("Skystone");
 
-       // webcamName = ahwMap.get(WebcamName.class, "Webcam 1");
+        webcamName = ahwMap.get(WebcamName.class, "Webcam 1");
 
 
         List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
@@ -150,7 +160,7 @@ public class vuforiaHardware {
 
         // Rotate the phone vertical about the X axis if it's in portrait mode
         if (PHONE_IS_PORTRAIT) {
-            phoneXRotate = 90 ;
+            phoneXRotate = 90;
         }
 
         // Next, translate the camera lens to where it is on the robot.
@@ -204,12 +214,11 @@ public class vuforiaHardware {
         rear2.setName("Rear Perimeter 2");
 
 
-
         // Set the position of the Stone Target.  Since it's not fixed in position, assume it's at the field origin.
         // Rotated it to to face forward, and raised it to sit on the ground correctly.
         // This can be used for generic target-centric approach algorithms
         stoneTarget.setLocation(OpenGLMatrix
-               .translation(0, 0, stoneZ)
+                .translation(0, 0, stoneZ)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
 
         //Set the position of the bridge support targets with relation to origin (center of field)
@@ -243,7 +252,7 @@ public class vuforiaHardware {
                 .translation(-halfField, -quadField, mmTargetHeight)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 90)));
 
-       front2.setLocation(OpenGLMatrix
+        front2.setLocation(OpenGLMatrix
                 .translation(-halfField, quadField, mmTargetHeight)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 90)));
 
@@ -251,19 +260,119 @@ public class vuforiaHardware {
                 .translation(-quadField, halfField, mmTargetHeight)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0)));
 
-       blue2.setLocation(OpenGLMatrix
+        blue2.setLocation(OpenGLMatrix
                 .translation(quadField, halfField, mmTargetHeight)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0)));
 
         rear1.setLocation(OpenGLMatrix
-               .translation(halfField, quadField, mmTargetHeight)
-               .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
+                .translation(halfField, quadField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
 
-       rear2.setLocation(OpenGLMatrix
+        rear2.setLocation(OpenGLMatrix
                 .translation(halfField, -quadField, mmTargetHeight)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
 
 
     }
+    public  void setCamera(String camera){
+        if(camera.equalsIgnoreCase("phone")) {
+            this.phoneCam = true;
+            return;
+        } else if(camera.equalsIgnoreCase("webcam")) {
+            this.webCam = true;
+            return;
+        } else {
+            this.phoneCam = false;
+            this.webCam = false;
+            return;
+        }
+    }
+
+    public void scanTheRoom() {
+        List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
+        setCamera("phone");
+        for (VuforiaTrackable trackable : allTrackables) {
+            // seeing the alliance wall using the phone
+            if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
+                if (trackable.getName().equals("Red Perimeter 1")) {
+                    //telemetry.addData("red alliance wall", trackable.getName());
+                    // depot side
+                    depot = false;
+                    blueTeam = false;
+                    this.locationFlag = true;
+                    return;
+                } else if (trackable.getName().equals("Red Perimeter 2")) {
+                    // telemetry.addData("red alliance wall", trackable.getName());
+                    //build side
+                    depot = true;
+                    blueTeam = false;
+                    this.locationFlag = true;
+                    return;
+                } else if (trackable.getName().equals("Blue Perimeter 1")) {
+                    //telemetry.addData(" blue alliance wall", trackable.getName());
+                    //depot side
+                    depot = true;
+                    blueTeam = true;
+                    this.locationFlag = true;
+                    return;
+                } else if (trackable.getName().equals("Blue Perimeter 2")) {
+                    // telemetry.addData("blue alliance wall ", trackable.getName());
+                    //build side
+                    depot = false;
+                    blueTeam = true;
+                    this.locationFlag = true;
+                    return;
+                }
+            }
+        }
+    }
+
+    public void depotScan() {
+        List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
+        setCamera("webcam");
+        //robot.turnServo(START_POINT);
+        //add a sleep(1 sec);
+        //robot.turnServo(MID_POINT);
+        for (VuforiaTrackable trackable : allTrackables) {
+            // seeing the sky stones
+            if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
+                //looking for the skystone
+                if (trackable.getName().equals("Sky Stones")) {
+                  skyStoneVis = true;
+
+                }
+            }
+        }
+    }
+
 
 }
+//
+//            // using the webcam
+//            else {
+//                if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
+//                    if (trackable.getName().equals("Front Perimeter 1")) {
+//                        //  telemetry.addData("red depot", trackable.getName());
+//                    }
+//                    else if (trackable.getName().equals("Front Perimeter 2")) {
+//                        //  telemetry.addData("blue depot", trackable.getName());
+//                    }
+//                    else if (trackable.getName().equals("Rear Perimeter 2")) {
+//                        // telemetry.addData("build side/ red side", trackable.getName());
+//                    }
+//                    else if (trackable.getName().equals("Rear Perimeter 1")) {
+//                        // telemetry.addData("build side / blue side", trackable.getName());
+//                    }
+//                    else {
+//                        // telemetry.addLine("Sky Stones");
+//                    }
+//                    if (trackable.getName().equals("Sky Stones")) {
+//                        //move the arm
+//                    }
+//                }
+//            }
+//
+//
+
+
+

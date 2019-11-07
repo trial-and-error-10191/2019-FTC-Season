@@ -27,12 +27,15 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 @TeleOp(name="Ian Vuforia code", group ="Concept")
 public class vuforiaTeleOp extends LinearOpMode {
     vuforiaHardware robot = new vuforiaHardware();
+    armHardware Robot = new armHardware();
 
     @Override
     public void runOpMode() {
 
         robot.init(hardwareMap);
         robot.initVuforia();
+
+
 
         List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
         allTrackables.addAll(robot.targetsSkyStone);
@@ -55,20 +58,32 @@ public class vuforiaTeleOp extends LinearOpMode {
                             telemetry.addData("red depot", trackable.getName());
                         } else if (trackable.getName().equals("Front Perimeter 2")) {
                             telemetry.addData("blue depot", trackable.getName());
-                        } else if (trackable.getName().equals("Red Perimeter 2")) {
+                        }
+                        else if (trackable.getName().equals("Red Perimeter 1")) {
                             telemetry.addData("red alliance wall", trackable.getName());
-                        } else if (trackable.getName().equals("Blue Perimeter 1")) {
+                        }
+                        else if (trackable.getName().equals("Red Perimeter 2")) {
+                            telemetry.addData("red alliance wall", trackable.getName());
+                        }
+
+                        else if (trackable.getName().equals("Blue Perimeter 1")) {
                             telemetry.addData(" blue alliance wall", trackable.getName());
-                        } else if (trackable.getName().equals("Red Perimeter 1")) {
-                            telemetry.addData("red alliance wall", trackable.getName());
-                        } else if (trackable.getName().equals("Blue Perimeter 2")) {
+                        }
+                        else if (trackable.getName().equals("Blue Perimeter 2")) {
                             telemetry.addData("blue alliance wall ", trackable.getName());
-                        } else if (trackable.getName().equals("Rear Perimeter 2")) {
+                        }
+
+
+                        else if (trackable.getName().equals("Rear Perimeter 2")) {
                             telemetry.addData("build side/ red side", trackable.getName());
                         } else if (trackable.getName().equals("Rear Perimeter 1")) {
                             telemetry.addData("build side / blue side", trackable.getName());
-                        } else {
+                        }
+                        else {
                             telemetry.addLine("Sky Stones");
+                        }
+                        if(trackable.getName().equals("Sky Stones")){
+                            //move the arm
                         }
 
 
@@ -80,6 +95,7 @@ public class vuforiaTeleOp extends LinearOpMode {
                         if (robotLocationTransform != null) {
                             robot.lastLocation = robotLocationTransform;
                         }
+
                         break;
                     }
                 }
@@ -99,9 +115,18 @@ public class vuforiaTeleOp extends LinearOpMode {
                     telemetry.addData("Visible Target", "none");
                 }
                 telemetry.update();
+
+
             }
             // Disable Tracking when we are done;
             robot.targetsSkyStone.deactivate();
+        }
+
+    }
+
+    public void scanningForLocation() {
+        while(opModeIsActive() && !robot.locationFlag) {
+            robot.scanTheRoom();
         }
     }
 }
