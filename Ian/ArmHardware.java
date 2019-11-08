@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -58,6 +59,10 @@ public class ArmHardware {
         shoulder.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         claw.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        shoulder.setDirection(DcMotor.Direction.FORWARD);
+        elbow.setDirection(DcMotor.Direction.REVERSE);
+        claw.setDirection(DcMotor.Direction.FORWARD);
+
         elbow.setPower(0);
         shoulder.setPower(0);
         claw.setPower(0);
@@ -71,15 +76,35 @@ public class ArmHardware {
     public void move(double power) {
         // moving the shoulder
         if (Math.abs(power) > thresh) {
-            shoulder.setPower(power);
-            elbow.setPower(power);
+            if (power > 0 && shoulderStowed.isPressed()) {
+                shoulder.setPower(0);
+                elbow.setPower(0);
+            } else {
+                shoulder.setPower(power);
+                elbow.setPower(power);
+            }
         }  else {
             shoulder.setPower(0);
             elbow.setPower(0);
         }
     }
 
+    // Moves the claw
+    // positive is closing the claw
+    public void grip(double power) {
+        if (Math.abs(power) > thresh) {
+            if (power < 0 && clawZero.isPressed()) {
+                claw.setPower(0);
+            } else {
+                claw.setPower(power);
+            }
+        } else {
+            claw.setPower(0);
+        }
+    }
+
     // This function puts the arm back into a parallel to the ground initial state
+    // .-.-c
     public void lineUp() {
         if(!elbowTouching.getState() && shoulderStowed.isPressed()) {
             // If stowed
@@ -101,6 +126,7 @@ public class ArmHardware {
     }
 
     // This function stows the arm
+    // .-.-c
     public void stow() {
         if (elbowTouching.getState() && !shoulderStowed.isPressed()) {
             // If in arbitrary position
