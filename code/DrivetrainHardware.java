@@ -245,7 +245,7 @@ public class DrivetrainHardware {
             // Update telemetry & Allow time for other processes to run.
             telemetry.update();
         }
-    }
+}
 
     /**
      * Perform one cycle of closed loop heading control.
