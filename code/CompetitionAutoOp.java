@@ -4,109 +4,123 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-
-import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 
 @Autonomous(name="Auto", group="Test Code")
 public class CompetitionAutoOp extends LinearOpMode {
     CompetitionHardware robot = new CompetitionHardware();
 
     ElapsedTime elapsedDwell = new ElapsedTime();
-    double dwellTime = 2000;
+    double dwellTime = 2500;
 
     // Movement Variables
     double dir = 1;
     double locationDistance = 11;
-    double skystoneScanDistance = 12;
+    double skystoneScanDistance1 = 18;
+    double skystoneScanDistance2 = 6;
 
     // Behavior Flags
     boolean movedFlag = false;
     boolean debug = false;
     int hasMoved = 0;
 
-
     @Override
     public void runOpMode() throws InterruptedException {
         robot.init(hardwareMap);
 
         waitForStart();
+        //cool
 
         if (debug) {
-
-
-
+            robot.driveTrain.strafeToPosition(20, 0.45);
+            sleep(500);
+            robot.driveTrain.strafeToPosition(-20, 0.45);
         } else {
-
-            robot.vision.setServoAngle(70);
-            movedFlag = true;
+            // Back up to see the picture
             telemetry.addLine("Trying to find myself");
+            telemetry.update();
             robot.createDriveThread(-locationDistance, 0.45, telemetry);
             robot.dt.start();
             while (robot.dt.isAlive()) {
 
             }
+
+            // Look for our location
             elapsedDwell.reset();
-            //robot.vision.scanTheRoom();
-          //  robot.vision.phoneServo.setPosition(robot.vision.getCenterPosition(locationDistance +
-            //
-            //        robot.vision.CAMERA_FORWARD_DISPLACEMENT));
+            robot.vision.phoneServo.setPosition(robot.vision.getCenterPosition(locationDistance +
+                    robot.vision.CAMERA_FORWARD_DISPLACEMENT));
             while (!robot.vision.locationFlag && elapsedDwell.milliseconds() < dwellTime) {
                 robot.vision.detectLocation();
             }
 
+            // If we know where we are
             if (robot.vision.locationFlag) {
-                telemetry.update();
                 telemetry.addLine("found myself");
+                telemetry.update();
+
+                // If you are on red team, reverse your directions for left and right
                 if (!robot.vision.blueTeam) {
                     dir = -1;
                 }
-                // Do build site autonomous
-                if (!robot.vision.depot) {
-                    telemetry.addData("side", robot.vision.depot);
-                    telemetry.addData("teamBlue", robot.vision.blueTeam);
-                    telemetry.update();
 
-                    //  robot.arm.elbowMove(-100, 0.3);
+                telemetry.addData("Depot Side", robot.vision.depot);
+                telemetry.addData("Blue Team", robot.vision.blueTeam);
+                telemetry.update();
+
+                // If you are not at depot, do build site autonomous
+                if (!robot.vision.depot) {
+                    // Lift up the Foundation latch
                     robot.arm.latch();
-                    sleep(200);
+
+                    // Move to center of Foundation
+                    telemetry.addLine("Moving to foundation");
                     telemetry.update();
-                    telemetry.addLine("Moving to build site");
-                    robot.createStrafeThread(11 * dir, 0.45);
+                    robot.createStrafeThread(17.5 * dir, 0.45);
                     robot.st.start();
                     while (robot.st.isAlive()) {
                     }
                     sleep(200);
-                    // Red side seems to go too far. We need to move away from dead reckoning
-                    robot.createDriveThread(robot.vision.blueTeam ? -31 + locationDistance : -29 +
-                            locationDistance, 0.4, telemetry);
+
+                    // Move to the Foundation
+                    // TODO: Fix this, weight imbalance has been changed. Distances should be same
+                    robot.createDriveThread( -30 , 0.4, telemetry);
                     robot.dt.start();
                     while (robot.dt.isAlive()) {
                     }
                     sleep(200);
-                    robot.arm.latch();
-                    sleep(500);
-                    telemetry.update();
-                    telemetry.addLine("Moving build site");
-                    robot.driveTrain.move(34, 0.4, telemetry);
-                    robot.arm.latch();
-                    telemetry.update();
-                    telemetry.addLine("parking");
-                    robot.driveTrain.strafeToPosition(-55 * dir, 0.45);
 
-                }
-                // Do depot site autonomous
-                else if (robot.vision.blueTeam && robot.vision.depot){
-                    // Turn around to look for skystones
+                    // Put the latch down to grab the foundation
+                    robot.arm.latch();
+                    sleep(200);
+
+                    // Move foundation to build site
+                    telemetry.addLine("Moving to build site");
                     telemetry.update();
+                    robot.driveTrain.move(34, 0.4, telemetry);
+
+                    // Release foundation
+                    robot.arm.latch();
+
+                    // Go park under skybridge
+                    telemetry.addLine("parking");
+                    telemetry.update();
+                    robot.driveTrain.strafeToPosition(-55 * dir, 0.45);
+                }
+                // If you are at depot side, do its autonomous
+                else {
+                    // Turn around to look for skystones
                     telemetry.addLine("Looking for skystones");
+                    telemetry.update();
                     robot.vision.setServoAngle(90); // Point camera normal to the robot
-                    robot.driveTrain.rotate(180, robot.driveTrain.ROT_SPEED, telemetry);
-                    sleep(500);
+                    robot.driveTrain.rotate(  robot.driveTrain.getHeading()+180, robot.driveTrain.ROT_SPEED, telemetry);
+
+                    // If on red team, strafe to a side
+                    if(!robot.vision.blueTeam) {
+                        robot.createStrafeThread(16, 0.45);
+                        robot.st.start();
+                        while (robot.st.isAlive()) {
+                        }
+                    }
 
                     // Look for skystones
                     elapsedDwell.reset();
@@ -119,7 +133,7 @@ public class CompetitionAutoOp extends LinearOpMode {
                     // If you didn't find it the first time
                     if (!robot.vision.skyStoneFlag) {
                         // Strafe an amount to look at more stones
-                        robot.createStrafeThread(skystoneScanDistance * dir, 0.45);
+                        robot.createStrafeThread(skystoneScanDistance1 * dir, 0.45);
                         robot.st.start();
                         while (robot.st.isAlive()) {
                             // Busy waiting
@@ -128,6 +142,7 @@ public class CompetitionAutoOp extends LinearOpMode {
                         // Look for skystones
                         elapsedDwell.reset();
                         while (!robot.vision.skyStoneFlag && elapsedDwell.milliseconds() < dwellTime) {
+                            robot.vision.detectSkystone(telemetry);
                             telemetry.addData("skystone", robot.vision.skyStoneFlag);
                             telemetry.update();
                         }
@@ -137,13 +152,12 @@ public class CompetitionAutoOp extends LinearOpMode {
                     }
                     // If you didn't see it a second time
                     if (!robot.vision.skyStoneFlag) {
-                        // Strafe an amount to look at more stones
-                        robot.createStrafeThread(skystoneScanDistance * dir, 0.45);
+                        // Strafe an amount to look at more stones (should be at the wall)
+                        robot.createStrafeThread(skystoneScanDistance2 * dir, 0.45);
                         robot.st.start();
                         while (robot.st.isAlive()) {
                             // Busy waiting
                         }
-
 
                         // Look for skystones
                         elapsedDwell.reset();
@@ -158,14 +172,16 @@ public class CompetitionAutoOp extends LinearOpMode {
                     }
                     if (robot.vision.skyStoneFlag) {
                         // Update Skystone location
-                        telemetry.update();
                         telemetry.addLine("found skystone");
+                        telemetry.update();
                         robot.vision.detectSkystone(telemetry);
 
-                        // Line up the center of the robot with the detected skystone
+                        // Line up the edge opposite the camera with the detected skystone
+                        telemetry.addLine("Centering Skystone");
                         telemetry.update();
-                        telemetry.addLine("Moving skystones");
-                        robot.createStrafeThread(robot.vision.getRobotOffsetFromSkystone(), 0.45);
+                        double distance = robot.vision.blueTeam ? robot.vision.getEdgeOffsetFromSkystone() :
+                                robot.vision.getCameraOffsetFromSkystone();
+                        robot.createStrafeThread(distance, 0.45);
                         robot.st.start();
                         while (robot.st.isAlive()) {
                             // Busy waiting
@@ -175,34 +191,36 @@ public class CompetitionAutoOp extends LinearOpMode {
                         // Drive towards the skystone
                         robot.createDriveThread(robot.vision.getDistanceToSkystone(), 0.45, telemetry);
                         robot.dt.start();
-                        sleep(500);
                         while (robot.dt.isAlive()) {
                             // Busy waiting
                         }
+                        sleep(500);
 
                         // TODO: Put in code for obtaining the skystone
 
                         // Drive away from skystone
-                        telemetry.update();
                         telemetry.addLine("Moving build site");
+                        telemetry.update();
                         robot.createDriveThread(-12, 0.45, telemetry);
                         robot.dt.start();
-                        sleep(500);
                         while (robot.dt.isAlive()) {
                             // Busy waiting
-
                         }
+                        sleep(500);
 
                         // Turn 90 degrees to go towards skybridge
-                        robot.driveTrain.rotate(dir * -90, robot.driveTrain.ROT_SPEED, telemetry);
+                        robot.driveTrain.rotate(dir * robot.driveTrain.getHeading() + 90, robot.driveTrain.ROT_SPEED, telemetry);
                         sleep(200);
 
                         // Move towards build site (assumption is that it doesn't move)
-                        robot.driveTrain.move(82 + hasMoved * skystoneScanDistance,
-                                0.45, telemetry);
-                        sleep(200);
-
-
+                        if (hasMoved == 2) {
+                            robot.driveTrain.move(82 + skystoneScanDistance1 + skystoneScanDistance2,
+                                    0.45, telemetry);
+                        }
+                        else {
+                            robot.driveTrain.move(82 + hasMoved * skystoneScanDistance1,
+                                    0.45, telemetry);
+                        }
 
                         // Rotate such that outtake is above build site
                         robot.driveTrain.rotate(robot.driveTrain.getHeading() - 90 * dir, robot.driveTrain.ROT_SPEED, telemetry);
@@ -211,10 +229,12 @@ public class CompetitionAutoOp extends LinearOpMode {
                         // Move towards build site (assumption is that it doesn't move)
                         robot.driveTrain.move(20, 0.45, telemetry);
                         sleep(200);
-                        robot.driveTrain.move(-7, 0.45, telemetry);
-                        sleep(200);
 
                         // TODO: Put in code for dropping the skystone
+
+                        // Back up to park
+                        robot.driveTrain.move(-7, 0.45, telemetry);
+                        sleep(200);
 
                         // Rotate towards our parking spot
                         telemetry.update();
@@ -225,130 +245,38 @@ public class CompetitionAutoOp extends LinearOpMode {
                         // Move to our parking spot
                         robot.driveTrain.move(-48, 0.45, telemetry);
                     }
-                    // If you still didn't find one, go park
+                    // If you still didn't find one, last one is skystone
                     if (!robot.vision.skyStoneFlag) {
-                        telemetry.update();
-                        telemetry.addLine("No skyston, Parking");
-                        robot.driveTrain.move(14, 0.45, telemetry);
+                        // Assume a distance to a stone
+                        robot.driveTrain.move(20, 0.45, telemetry);
                         sleep(500);
+
+                        // TODO: Put in code for grabbing the skystone
+
+                        // Back up to drive towards foundation
                         robot.driveTrain.move(-12, 0.45, telemetry);
                         sleep(500);
+
+                        // Rotate towards foundation
                         robot.driveTrain.rotate(-90 * dir, robot.driveTrain.ROT_SPEED, telemetry);
                         sleep(500);
-                        robot.driveTrain.move(34+skystoneScanDistance*hasMoved, 0.45, telemetry);
 
-                    }
-                }
-                else {
-                    // Turn around to look for skystones
-                    robot.vision.setServoAngle(90); // Point camera normal to the robot
-                    robot.driveTrain.rotate(180, robot.driveTrain.ROT_SPEED, telemetry);
-                    sleep(500);
+                        // Drive towards foundation
+                        robot.driveTrain.move(82 + skystoneScanDistance1 + skystoneScanDistance2, 0.45, telemetry);
 
-                    robot.createStrafeThread(16, 0.45);
-                    robot.st.start();
-                    while (robot.st.isAlive()) {
-
-                    }
-                    // Look for skystones
-                    elapsedDwell.reset();
-                    while (!robot.vision.skyStoneFlag && elapsedDwell.milliseconds() < dwellTime) {
-                        robot.vision.detectSkystone(telemetry);
-                        telemetry.addData("skystone", robot.vision.skyStoneFlag);
-                        telemetry.update();
-                    }
-
-                    // If you didn't find it the first time
-                    if (!robot.vision.skyStoneFlag) {
-                        // Strafe an amount to look at more stones
-                        robot.createStrafeThread(skystoneScanDistance * dir, 0.45);
-                        robot.st.start();
-                        while (robot.st.isAlive()) {
-                            // Busy waiting
-                        }
-
-                        // Look for skystones
-                        elapsedDwell.reset();
-                        while (!robot.vision.skyStoneFlag && elapsedDwell.milliseconds() < dwellTime) {
-                            telemetry.addData("skystone", robot.vision.skyStoneFlag);
-                            telemetry.update();
-                        }
-
-                        // You've moved once
-                        hasMoved = 1;
-                    }
-                    // If you didn't see it a second time
-                    if (!robot.vision.skyStoneFlag) {
-                        // Strafe an amount to look at more stones
-                        robot.createStrafeThread(skystoneScanDistance * dir, 0.45);
-                        robot.st.start();
-                        while (robot.st.isAlive()) {
-                            // Busy waiting
-                        }
-
-                        // Look for skystones
-                        elapsedDwell.reset();
-                        while (!robot.vision.skyStoneFlag && elapsedDwell.milliseconds() < dwellTime) {
-                            robot.vision.detectSkystone(telemetry);
-                            telemetry.addData("skystone", robot.vision.skyStoneFlag);
-                            telemetry.update();
-                        }
-
-                        // You've moved twice
-                        hasMoved = 2;
-                    }
-                    if (robot.vision.skyStoneFlag) {
-                        // Update Skystone location
-                        robot.vision.detectSkystone(telemetry);
-
-                        // Line up the center of the robot with the detected skystone
-                        VectorF translation = robot.vision.currentSkystoneLocation.getTranslation();
-                        robot.createStrafeThread(translation.get(robot.vision.hIndex)/25.4, 0.45);
-                        robot.st.start();
-                        while (robot.st.isAlive()) {
-                            // Busy waiting
-                        }
-                        sleep(500);
-
-                        // Drive towards the skystone
-                        robot.createDriveThread(robot.vision.getDistanceToSkystone(), 0.45, telemetry);
-                        robot.dt.start();
-                        sleep(500);
-                        while (robot.dt.isAlive()) {
-                            // Busy waiting
-                        }
-
-                        // TODO: Put in code for obtaining the skystone
-
-                        // Drive away from skystone
-                        robot.createDriveThread(-12, 0.45, telemetry);
-                        robot.dt.start();
-                        sleep(500);
-                        while (robot.dt.isAlive()) {
-                            // Busy waiting
-
-                        }
-
-                        // Turn 90 degrees to go towards skybridge
-                        robot.driveTrain.rotate(dir * -90, robot.driveTrain.ROT_SPEED, telemetry);
-                        sleep(500);
-
-                        // Move towards build site (assumption is that it doesn't move)
-                        robot.driveTrain.move(82 + hasMoved * skystoneScanDistance,
-                                0.45, telemetry);
-                        sleep(500);
-
-                        // Rotate such that outtake is above build site
+                        // Rotate to face foundation
                         robot.driveTrain.rotate(robot.driveTrain.getHeading() - 90 * dir, robot.driveTrain.ROT_SPEED, telemetry);
                         sleep(500);
 
-                        // Move towards build site (assumption is that it doesn't move)
+                        // Move towards foundation (assumption is that it doesn't move)
                         robot.driveTrain.move(20, 0.45, telemetry);
-                        sleep(200);
-                        robot.driveTrain.move(-7, 0.45, telemetry);
                         sleep(200);
 
                         // TODO: Put in code for dropping the skystone
+
+                        // Back up to park
+                        robot.driveTrain.move(-7, 0.45, telemetry);
+                        sleep(200);
 
                         // Rotate towards our parking spot
                         robot.driveTrain.rotate(robot.driveTrain.getHeading() + 90 * dir, robot.driveTrain.ROT_SPEED, telemetry);
@@ -356,16 +284,6 @@ public class CompetitionAutoOp extends LinearOpMode {
 
                         // Move to our parking spot
                         robot.driveTrain.move(-48, 0.45, telemetry);
-                    }
-                    // If you still didn't find one, go park
-                    if (!robot.vision.skyStoneFlag) {
-                        robot.driveTrain.move(14, 0.45, telemetry);
-                        sleep(500);
-                        robot.driveTrain.move(-12, 0.45, telemetry);
-                        sleep(500);
-                        robot.driveTrain.rotate(-90 * dir, robot.driveTrain.ROT_SPEED, telemetry);
-                        sleep(500);
-                        robot.driveTrain.move(34+skystoneScanDistance*hasMoved, 0.45, telemetry);
 
                     }
                 }
