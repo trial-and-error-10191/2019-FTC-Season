@@ -27,12 +27,12 @@ public class DrivetrainHardware {
 
     // Preference Variables
     static final double     TURN_SPEED              = 0.5;     // Nominal half speed for better accuracy.
-    static final double     HEADING_THRESHOLD       = 1 ;      // As tight as we can make it with an integer gyro
-    static final double     P_TURN_COEFF            = 0.1;     // Larger is more responsive, but also less stable
+    static final double     HEADING_THRESHOLD       = 0.25 ;      // As tight as we can make it with an integer gyro
+    static final double     P_TURN_COEFF            = 0.025;     // Larger is more responsive, but also less stable
     static final double MAX_SPEED = 0.85;
     static final double AVG_SPEED = 0.6;
     static final double MIN_SPEED = 0.45;
-    static final double ROT_SPEED = 0.35;
+    static final double ROT_SPEED = 0.55;
 
     // Drivetrain coolios variables
     double thresh  = 0.06;
@@ -147,6 +147,12 @@ public class DrivetrainHardware {
     To drive backward, simply make the inches input negative.
      */
     public void move(double inches, double speed, Telemetry telemetry) {
+        // TODO: Make sure this thing Preston added isn't breaking everything
+        for(int i = 0; i < motors.length; i++) {
+            motors[i].setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+        // TODO
+
         //
         if (inches < 5) {
             int move = (int) (Math.round(inches * conversion));
@@ -202,6 +208,12 @@ public class DrivetrainHardware {
     }
 
     public void strafeToPosition(double inches, double speed){
+        // TODO: Make sure this thing Preston added isn't breaking everything
+        for(int i = 0; i < motors.length; i++) {
+            motors[i].setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+        // TODO
+
         //
         int move = (int)(Math.round(inches * meccyConversion));
         //
@@ -282,7 +294,7 @@ public class DrivetrainHardware {
             rightSpeed  = speed * steer;
             //leftSpeed   = -rightSpeed;
 
-            if ((Math.abs(rightSpeed) < 0.2) && (rightSpeed < 0)) {
+            if (Math.abs(rightSpeed) < 0.25) {
                 rightSpeed = Math.signum(rightSpeed)*0.25;
             }
             leftSpeed   = -rightSpeed;
@@ -338,9 +350,5 @@ public class DrivetrainHardware {
     public double getSteer(double error, double PCoeff) {
         return Range.clip(error * PCoeff, -1, 1);
     }
-
-
-
-
-        }
+}
 

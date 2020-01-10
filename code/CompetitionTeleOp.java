@@ -45,7 +45,9 @@ public class CompetitionTeleOp extends LinearOpMode {
         boolean closeClaw;
         boolean stow;
         boolean toggleLatch;
-        double moveArm;
+        //double moveArm;
+        double moveSholder;
+        double moveElbow;
         boolean leftservo;
         boolean rightservo;
 
@@ -63,7 +65,9 @@ public class CompetitionTeleOp extends LinearOpMode {
             closeClaw = gamepad2.b;
             stow = gamepad2.dpad_down;
             toggleLatch = gamepad2.x;
-            moveArm = gamepad2.left_stick_y;
+            //moveArm = gamepad2.left_stick_y;
+            moveElbow = gamepad2.left_stick_y;
+            moveSholder = gamepad2.right_stick_y;
             leftservo = gamepad2.dpad_left;
             rightservo = gamepad2.dpad_right;
 
@@ -115,10 +119,15 @@ public class CompetitionTeleOp extends LinearOpMode {
                 robot.arm.latch();
                 timeSinceLastLatch.reset();
             }
-            if(Math.abs(moveArm) > 0.06) {
-                robot.arm.shoulder.setPower(moveArm);
+            if(Math.abs(moveSholder) > 0.06) {
+                robot.arm.shoulder.setPower(moveSholder);
             } else {
                 robot.arm.shoulder.setPower(0);
+            }
+            if(Math.abs(moveElbow) > 0.06) {
+                robot.arm.elbow.setPower(moveElbow);
+            } else {
+                robot.arm.elbow.setPower(0);
             }
 
             // Move Servo with Camera

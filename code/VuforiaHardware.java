@@ -304,8 +304,14 @@ public class VuforiaHardware {
     // Convert distance from centering on camera to centering on the robot; Only use this if you are
     // currently detecting the skystone.
     public double getRobotOffsetFromSkystone() {
-        VectorF translation = currentSkystoneLocation.getTranslation(); // Acquire vector to center of skystone
-        double distance = translation.get(hIndex)/25.4; // Convert camera centering distance to inches
+        double distance = getCameraOffsetFromSkystone();
+        return (CAMERA_LEFT_DISPLACEMENT+distance); // Convert camera centering to robot centering
+    }
+
+    // Convert distance from centering on camera to centering on the opposite edge; Only use this if
+    // you are currently detecting the skystone.
+    public double getEdgeOffsetFromSkystone() {
+        double distance = getCameraOffsetFromSkystone();
         return (CAMERA_FROM_EDGE+distance); // Convert camera centering to robot centering
     }
 
